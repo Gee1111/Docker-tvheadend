@@ -547,7 +547,10 @@ RUN		apt-get install -y	libvpx-dev libopus-dev
 	--enable-pngquant \
 	--enable-trace \
 	--enable-cuvid \
+	--enable-cuda-nvcc
 	--enable-nvenc \
+	--enable-cuda-llvm
+	--enable-libnpp
 	--infodir=/usr/share/info \
 	--localstatedir=/var \
 	--mandir=/usr/share/man \
@@ -585,6 +588,7 @@ RUN  	apt-get update && \
 		gettext \
 		libdvbcsa-dev \
 		nano \
+		libnpp \
 		libass9 \
 		libtheora-dev \
 		libxvidcore4 \
