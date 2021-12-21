@@ -549,8 +549,8 @@ RUN		apt-get install -y	libvpx-dev libopus-dev
 	--enable-cuvid \
 	--enable-cuda-nvcc
 	--enable-nvenc \
-	--enable-cuda-llvm
-	--enable-libnpp
+	--enable-cuda-llvm \
+	--enable-libnpp \
 	--infodir=/usr/share/info \
 	--localstatedir=/var \
 	--mandir=/usr/share/man \
