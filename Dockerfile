@@ -159,7 +159,6 @@ RUN \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
         curl -sLO https://archive.mozilla.org/pub/opus/opus-${OPUS_VERSION}.tar.gz && \
-        echo ${OPUS_SHA256SUM} | sha256sum --check && \
         tar -zx --strip-components=1 -f opus-${OPUS_VERSION}.tar.gz && \
         autoreconf -fiv && \
         ./configure --prefix="${PREFIX}" --enable-shared && \
@@ -172,7 +171,6 @@ RUN \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
         curl -sLO http://downloads.xiph.org/releases/vorbis/libvorbis-${VORBIS_VERSION}.tar.gz && \
-        echo ${VORBIS_SHA256SUM} | sha256sum --check && \
         tar -zx --strip-components=1 -f libvorbis-${VORBIS_VERSION}.tar.gz && \
         ./configure --prefix="${PREFIX}" --with-ogg="${PREFIX}" --enable-shared && \
         make && \
@@ -281,27 +279,30 @@ RUN  \
         make && \
         make install && \
         rm -rf ${DIR}
+		
 ## fridibi https://www.fribidi.org/
-RUN  \
-        DIR=/tmp/fribidi && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://github.com/fribidi/fribidi/archive/${FRIBIDI_VERSION}.tar.gz && \
-        echo ${FRIBIDI_SHA256SUM} | sha256sum --check && \
-        tar -zx --strip-components=1 -f ${FRIBIDI_VERSION}.tar.gz && \
-        sed -i 's/^SUBDIRS =.*/SUBDIRS=gen.tab charset lib bin/' Makefile.am && \
-        ./bootstrap --no-config --auto && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
-        make -j1 && \
-        make install && \
-        rm -rf ${DIR}
+##RUN  \
+     #   DIR=/tmp/fribidi && \
+     #   mkdir -p ${DIR} && \
+      #  cd ${DIR} && \
+      #  curl -sLO https://github.com/fribidi/fribidi/archive/refs/tags/v1.0.11.tar.gz && \
+      #  tar -zx --strip-components=1 -f v1.0.11.tar.gz && \
+      #  sed -i 's/^SUBDIRS =.*/SUBDIRS=gen.tab charset lib bin/' Makefile.am && \
+      #  ./bootstrap --no-config --auto && \
+      #  ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
+      #  make -j12 && \
+      #  make install && \
+      #  rm -rf ${DIR}
+	  
+	  RUN apt-get install libfribidi-dev python3 -y
+	  
 ## fontconfig https://www.freedesktop.org/wiki/Software/fontconfig/
 RUN  \
         DIR=/tmp/fontconfig && \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
-        curl -sLO https://www.freedesktop.org/software/fontconfig/release/fontconfig-${FONTCONFIG_VERSION}.tar.bz2 && \
-        tar -jx --strip-components=1 -f fontconfig-${FONTCONFIG_VERSION}.tar.bz2 && \
+        curl -sLO https://www.freedesktop.org/software/fontconfig/release/fontconfig-${FONTCONFIG_VERSION}.tar.gz && \
+        tar -zx --strip-components=1 -f fontconfig-${FONTCONFIG_VERSION}.tar.gz && \
         ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
         make && \
         make install && \
@@ -374,8 +375,8 @@ RUN \
         DIR=/tmp/libXau && \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
-        curl -sLO https://www.x.org/archive/individual/lib/libXau-${XAU_VERSION}.tar.gz && \
-        tar -zx --strip-components=1 -f libXau-${XAU_VERSION}.tar.gz && \
+        curl -sLO https://www.x.org/archive/individual/lib/libXau-1.0.9.tar.gz && \
+        tar -zx --strip-components=1 -f libXau-1.0.9.tar.gz && \
         ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
         make && \
         make install && \
@@ -385,8 +386,8 @@ RUN \
         DIR=/tmp/libpthread-stubs && \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
-        curl -sLO https://xcb.freedesktop.org/dist/libpthread-stubs-${LIBPTHREAD_STUBS_VERSION}.tar.gz && \
-        tar -zx --strip-components=1 -f libpthread-stubs-${LIBPTHREAD_STUBS_VERSION}.tar.gz && \
+        curl -sLO https://xcb.freedesktop.org/dist/libpthread-stubs-0.4.tar.gz && \
+        tar -zx --strip-components=1 -f libpthread-stubs-0.4.tar.gz && \
         ./configure --prefix="${PREFIX}" && \
         make && \
         make install && \
@@ -435,7 +436,6 @@ RUN \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
         curl -sLO https://download.videolan.org/pub/videolan/libbluray/${LIBBLURAY_VERSION}/libbluray-${LIBBLURAY_VERSION}.tar.bz2 && \
-        echo ${LIBBLURAY_SHA256SUM} | sha256sum --check && \
         tar -jx --strip-components=1 -f libbluray-${LIBBLURAY_VERSION}.tar.bz2 && \
         ./configure --prefix="${PREFIX}" --disable-examples --disable-bdjava-jar --disable-static --enable-shared && \
         make && \
