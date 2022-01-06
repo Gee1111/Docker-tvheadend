@@ -579,6 +579,13 @@ COPY --from=build /tmp/comskip-build/usr/ /usr/
 COPY --from=build /tmp/tvheadend-build/usr/ /usr/
 COPY --from=build /usr/local/share/man/ /usr/local/share/man/
 
+
+RUN apt-get update && \
+    apt-get install -yq tzdata && \
+    ln -fs /usr/share/zoneinfo/Europe/Berlin /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata
+
+
 #### install runtime librarys ###########
 RUN  	apt-get update && \
 		apt-get install -y --no-install-recommends libargtable2-dev \
