@@ -1,4 +1,4 @@
-FROM    ubuntu:20.10 AS devel-base
+FROM    ubuntu:20.04 AS devel-base
 
 ENV	    NVIDIA_DRIVER_CAPABILITIES compat32,compute,video
 WORKDIR     /tmp/workdir
@@ -8,7 +8,7 @@ RUN     apt-get -yqq update && \
         apt-get autoremove -y && \
         apt-get clean -y
 
-FROM        ubuntu:20.10 AS runtime-base
+FROM        ubuntu:20.04 AS runtime-base
 
 ENV	    NVIDIA_DRIVER_CAPABILITIES compat32,compute,video
 WORKDIR     /tmp/workdir
@@ -22,35 +22,33 @@ FROM  devel-base as build
      
 ENV         FFMPEG_VERSION=4.4.1 \
             AOM_VERSION=v3.2.0 \
-            FDKAAC_VERSION=0.1.5 \
-            FONTCONFIG_VERSION=2.12.4 \
-            FREETYPE_VERSION=2.11.1 \
-            FRIBIDI_VERSION=0.19.7 \
+            FDKAAC_VERSION=2.0.2 \
+            FONTCONFIG_VERSION=2.13.94 \
+            FREETYPE_VERSION=2.11.1 \ 
+            FRIBIDI_VERSION=1.0.11 \
             KVAZAAR_VERSION=2.1.0 \
             LAME_VERSION=3.100 \
-            LIBASS_VERSION=0.15.2 \
-            LIBPTHREAD_STUBS_VERSION=0.4 \
+            LIBASS_VERSION=0.15.2 \ 
+            LIBPTHREAD_STUBS_VERSION=1.14 \
             LIBVIDSTAB_VERSION=1.1.0 \
-            LIBXCB_VERSION=1.13.1 \
-            XCBPROTO_VERSION=1.13 \
-            OGG_VERSION=1.3.5 \
+            LIBXCB_VERSION=1.14 \
+            XCBPROTO_VERSION=1.14 \
             OPENCOREAMR_VERSION=0.1.5 \
-            OPUS_VERSION=1.2 \
+            OPUS_VERSION=1.3 \
             OPENJPEG_VERSION=2.4.0 \
-            VORBIS_VERSION=1.3.5 \
+            VORBIS_VERSION=1.3.7 \
             VPX_VERSION=1.11.0 \
             WEBP_VERSION=1.2.1 \
             X264_VERSION=20191217-2245-stable \
-            X265_VERSION=3.2.1 \
-            XAU_VERSION=1.0.9 \
-            XORG_MACROS_VERSION=1.19.2 \
-            XPROTO_VERSION=7.0.31 \       
+            X265_VERSION=3.2.1 \ 
+            XAU_VERSION=1.7.3.1 \
+            XORG_MACROS_VERSION=1.19.3 \
+            XPROTO_VERSION=7.0.31 \     
 			NVIDIA_HEADERS_VERSION=11.1.5.0 \
-            LIBBLURAY_VERSION=1.1.2 \
+            LIBBLURAY_VERSION=1.3.0 \
             SRC=/usr/local
 
 ARG         FRIBIDI_SHA256SUM="3fc96fa9473bd31dcb5500bdf1aa78b337ba13eb8c301e7c28923fea982453a8 0.19.7.tar.gz"
-ARG         LIBASS_SHA256SUM="8fadf294bf701300d4605e6f1d92929304187fca4b8d8a47889315526adbafd7 0.13.7.tar.gz"
 ARG         LIBVIDSTAB_SHA256SUM="14d2a053e56edad4f397be0cb3ef8eb1ec3150404ce99a426c4eb641861dc0bb v1.1.0.tar.gz"
 ARG         OGG_SHA256SUM="fe5670640bd49e828d64d2879c31cb4dde9758681bb664f9bdbf159a01b0c76e libogg-1.3.4.tar.gz"
 ARG         OPUS_SHA256SUM="77db45a87b51578fbc49555ef1b10926179861d854eb2613207dc79d9ec0a9a9 opus-1.2.tar.gz"
@@ -60,7 +58,7 @@ ARG         LIBBLURAY_SHA256SUM="a3dd452239b100dc9da0d01b30e1692693e2a332a7d2991
 
 
 ARG         LD_LIBRARY_PATH=/opt/ffmpeg/lib
-ARG         MAKEFLAGS="-j12"
+ARG         MAKEFLAGS="-j16"
 ARG         PKG_CONFIG_PATH="/opt/ffmpeg/share/pkgconfig:/opt/ffmpeg/lib/pkgconfig:/opt/ffmpeg/lib64/pkgconfig"
 ARG         PREFIX=/opt/ffmpeg
 ARG         LD_LIBRARY_PATH="/opt/ffmpeg/lib:/opt/ffmpeg/lib64:/usr/lib64:/usr/lib"
@@ -365,8 +363,8 @@ RUN \
         DIR=/tmp/xproto && \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
-        curl -sLO https://www.x.org/archive/individual/proto/xproto-${XPROTO_VERSION}.tar.gz && \
-        tar -zx --strip-components=1 -f xproto-${XPROTO_VERSION}.tar.gz && \
+        curl -sLO https://www.x.org/archive/individual/proto/xorgproto-2021.5.tar.gz && \
+        tar -zx --strip-components=1 -f xorgproto-2021.5.tar.gz && \
         ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
         make && \
         make install && \
@@ -547,16 +545,16 @@ RUN		apt-get install -y	libvpx-dev libopus-dev
 	--enable-pngquant \
 	--enable-trace \
 	--enable-cuvid \
-	--enable-cuda-nvcc
 	--enable-nvenc \
 	--enable-cuda-llvm \
+	--enable-cuda-nvcc \
 	--enable-libnpp \
 	--infodir=/usr/share/info \
 	--localstatedir=/var \
 	--mandir=/usr/share/man \
 	--prefix=/usr \
 	--sysconfdir=/config && \
- make -j 12 && \
+ make -j 16 && \
  make DESTDIR=/tmp/tvheadend-build install	
  
  RUN \
@@ -567,11 +565,11 @@ RUN		apt-get install -y	libvpx-dev libopus-dev
  ./configure \
 	--bindir=/usr/bin \
 	--sysconfdir=/config/comskip && \
- make -j 12 && \
+ make -j 16 && \
  make DESTDIR=/tmp/comskip-build install
  
 
-FROM        ubuntu:20.10 AS release
+FROM        ubuntu:20.04 AS release
 MAINTAINER  Gee
 
 ENV         LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:/usr/lib:/usr/lib64:/lib:/lib64
@@ -588,12 +586,10 @@ RUN  	apt-get update && \
 		gettext \
 		libdvbcsa-dev \
 		nano \
-		libnpp \
 		libass9 \
 		libtheora-dev \
 		libxvidcore4 \
-		# x264 \
-		# x265 \
+		bzip2 \
 		xmltv && \		
 		apt-get autoremove -y && \
         apt-get clean -y
