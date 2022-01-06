@@ -517,6 +517,7 @@ RUN		apt-get install -y	libvpx-dev libopus-dev
 	/tmp/tvheadend && \
  git clone https://github.com/Gee1111/tvheadend.git /tmp/tvheadend && \
  cd /tmp/tvheadend && \
+ git checkout 09a2c71abb01db8735437f233b8a54a0bb4939fc && \
  ./configure \
 	`#Encoding` \
 	--no-cache \
