@@ -1,17 +1,17 @@
 FROM    ubuntu:20.04 AS devel-base
 
 ENV	    NVIDIA_DRIVER_CAPABILITIES compat32,compute,video
-WORKDIR     /tmp/workdir
+WORKDIR /tmp/workdir
 
 RUN     apt-get -yqq update && \
         apt-get install -yq --no-install-recommends ca-certificates expat libgomp1 && \
         apt-get autoremove -y && \
         apt-get clean -y
 
-FROM        ubuntu:20.04 AS runtime-base
+FROM    ubuntu:20.04 AS runtime-base
 
 ENV	    NVIDIA_DRIVER_CAPABILITIES compat32,compute,video
-WORKDIR     /tmp/workdir
+WORKDIR /tmp/workdir
 
 RUN     apt-get -yqq update && \
         apt-get install -yq --no-install-recommends ca-certificates expat libgomp1 libxcb-shape0-dev && \
@@ -20,33 +20,7 @@ RUN     apt-get -yqq update && \
 
 FROM  devel-base as build
      
-ENV         FFMPEG_VERSION=5.0 \
-            AOM_VERSION=v3.2.0 \
-            FDKAAC_VERSION=2.0.2 \
-            FONTCONFIG_VERSION=2.13.94 \
-            FREETYPE_VERSION=2.11.1 \ 
-            FRIBIDI_VERSION=1.0.11 \
-            KVAZAAR_VERSION=2.1.0 \
-            LAME_VERSION=3.100 \
-            LIBASS_VERSION=0.15.2 \ 
-            LIBPTHREAD_STUBS_VERSION=1.14 \
-            LIBVIDSTAB_VERSION=1.1.0 \
-            LIBXCB_VERSION=1.14 \
-            XCBPROTO_VERSION=1.14 \
-            OPENCOREAMR_VERSION=0.1.5 \
-            OPUS_VERSION=1.3 \
-            OPENJPEG_VERSION=2.4.0 \
-            VORBIS_VERSION=1.3.7 \
-            VPX_VERSION=1.11.0 \
-            WEBP_VERSION=1.2.1 \
-            X264_VERSION=20191217-2245-stable \
-            X265_VERSION=3.2.1 \ 
-            XAU_VERSION=1.7.3.1 \
-            XORG_MACROS_VERSION=1.19.3 \
-            XPROTO_VERSION=7.0.31 \     
-			NVIDIA_HEADERS_VERSION=11.1.5.1 \
-            LIBBLURAY_VERSION=1.3.0 \
-            SRC=/usr/local
+ENV         SRC=/usr/local
 
 ARG         LD_LIBRARY_PATH=/opt/ffmpeg/lib
 ARG         MAKEFLAGS="-j16"
@@ -54,10 +28,9 @@ ARG         PKG_CONFIG_PATH="/opt/ffmpeg/share/pkgconfig:/opt/ffmpeg/lib/pkgconf
 ARG         PREFIX=/opt/ffmpeg
 ARG         LD_LIBRARY_PATH="/opt/ffmpeg/lib:/opt/ffmpeg/lib64:/usr/lib64:/usr/lib"
 
-RUN		chmod 777 /var/cache/debconf/ 
-RUN		chmod 777 /var/cache/debconf/passwords.dat
+RUN			chmod 777 /var/cache/debconf/ 
+RUN			chmod 777 /var/cache/debconf/passwords.dat
 RUN 		echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && apt-get install -y -q
-
 
 RUN      buildDeps="autoconf \
                     automake \
@@ -77,11 +50,11 @@ RUN      buildDeps="autoconf \
                     python \
                     libssl-dev \
                     yasm \
-		libargtable2-0 \
-		xmltv \
-		gettext \
-		libhdhomerun-dev \
-		libargtable2-dev \
+					libargtable2-0 \
+					xmltv \
+					gettext \
+					libhdhomerun-dev \
+					libargtable2-dev \
                     zlib1g-dev" && \
         apt-get -yqq update && \
         apt-get install -yq --no-install-recommends ${buildDeps}
@@ -95,14 +68,14 @@ RUN \
 	./configure \
     --prefix=/usr \
     --sysconfdir=/etc \
-  --mandir=/usr/share/man \
-  --infodir=/usr/share/info \
-  --localstatedir=/var && \	
+	--mandir=/usr/share/man \
+	--infodir=/usr/share/info \
+	--localstatedir=/var && \	
 	make && \
- make check && \
- make DESTDIR=/tmp/libdvbcsa-build install && \
-        echo "**** copy to /usr for tvheadend dependency ****" && \
- cp -pr /tmp/libdvbcsa-build/usr/* /usr/
+	make check && \
+	make DESTDIR=/tmp/libdvbcsa-build install && \
+    echo "**** copy to /usr for tvheadend dependency ****" && \
+	cp -pr /tmp/libdvbcsa-build/usr/* /usr/
 
 
 ENV	NVIDIA_HEADERS_VERSION=11.1.5.2
@@ -116,43 +89,45 @@ RUN \
 	make install PREFIX="${PREFIX}" && \
         rm -rf ${DIR}
 
-## opencore-amr https://sourceforge.net/projects/opencore-amr/
-        
-# x264 http://www.videolan.org/developers/x264.html
-RUN 	apt install -y libopencore-amrnb-dev libopencore-amrwb-dev libogg-dev libopus-dev libvorbis-dev libtheora-dev libvpx-dev libwebp-dev libmp3lame-dev libxvidcore-dev libfdk-aac-dev libopenjp2-7-dev libfreetype-dev libvidstab-dev libfreetype6-dev libfribidi-dev python3 fontconfig libass-dev libprotozero-dev libxau-dev libxml2 libbluray-dev libaom-dev libxcb1-dev libpthread-stubs0-dev libx264-dev libx265-dev
-### x265 http://x265.org/
+RUN 	apt install -y \
+		nvidia-cuda-toolkit \
+		libopencore-amrnb-dev \
+		libopencore-amrwb-dev \
+		libogg-dev \
+		libopus-dev \
+		libvorbis-dev \
+		libtheora-dev \
+		libvpx-dev \
+		libwebp-dev \
+		libmp3lame-dev \
+		libxvidcore-dev \
+		libfdk-aac-dev \
+		libopenjp2-7-dev \
+		libfreetype-dev \
+		libvidstab-dev \
+		libfreetype6-dev \
+		libfribidi-dev \
+		python3 \
+		fontconfig \
+		libass-dev \
+		libprotozero-dev \
+		libxau-dev \
+		libxml2 \
+		libbluray-dev \
+		libaom-dev \
+		libxcb1-dev \
+		libpthread-stubs0-dev \
+		libx264-dev \
+		libx265-dev \
+		libvpx-dev \
+		libopus-dev \
+		libavresample-dev \
+		libva-dev \
+		liburiparser-dev \
+		libiconv-hook-dev
 
-### libogg https://www.xiph.org/ogg/
+ENV		KVAZAAR_VERSION=2.1.0
 
-### libopus https://www.opus-codec.org/
-
-### libvorbis https://xiph.org/vorbis/
-
-### libtheora http://www.theora.org/
-
-### libvpx https://www.webmproject.org/code/
-
-### libwebp https://developers.google.com/speed/webp/
-
-### libmp3lame http://lame.sourceforge.net/
-
-### xvid https://www.xvid.com/
-
-### fdk-aac https://github.com/mstorsjo/fdk-aac
-
-## openjpeg https://github.com/uclouvain/openjpeg
-
-## freetype https://www.freetype.org/
-
-## libvstab https://github.com/georgmartius/vid.stab
-		
-## fridibi https://www.fribidi.org/
-	  
-## fontconfig https://www.freedesktop.org/wiki/Software/fontconfig/
-
-## libass https://github.com/libass/libass	  
-	  
-## kvazaar https://github.com/ultravideo/kvazaar
 RUN \
         DIR=/tmp/kvazaar && \
         mkdir -p ${DIR} && \
@@ -165,30 +140,22 @@ RUN \
         make install && \
         rm -rf ${DIR}
 
-## libxcb (and supporting libraries) for screen capture https://xcb.freedesktop.org/
-
-## libxml2 - for libbluray
-
-## libbluray - Requires libxml, freetype, and fontconfig
-
-RUN	apt install -y nvidia-cuda-toolkit
-
 ## ffmpeg https://ffmpeg.org/
 ENV         FFMPEG_VERSION=4.4.3
 RUN  \
         DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
-	curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
+		curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
         tar -jx --strip-components=1 -f ffmpeg-${FFMPEG_VERSION}.tar.bz2
-	
+		
 RUN \
-        DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \	
+        DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
         ./configure \	
-	--nvccflags="-gencode arch=compute_35,code=sm_35 -O2" \
+		--nvccflags="-gencode arch=compute_35,code=sm_35 -O2" \
         --disable-debug \
         --disable-doc \
         --disable-ffplay \
         --enable-shared \ 
-	--enable-avresample \
+		--enable-avresample \
         --enable-libopencore-amrnb \
         --enable-libopencore-amrwb \
         --enable-gpl \
@@ -222,7 +189,7 @@ RUN \
         --enable-nvenc \
         --enable-cuda \
         --enable-cuvid \
-	--enable-cuda-nvcc \
+		--enable-cuda-nvcc \
         --enable-libnpp \
         --extra-cflags="-I${PREFIX}/include -I${PREFIX}/include/ffnvcodec" && \  		
         make && \
@@ -239,9 +206,7 @@ RUN \
         cp ${PREFIX}/bin/* /usr/local/bin/ && \
         cp -r ${PREFIX}/share/* /usr/local/share/ && \
         LD_LIBRARY_PATH=/usr/local/lib ffmpeg -buildconf
-		
-RUN		apt-get install -y libvpx-dev libopus-dev libavresample-dev libva-dev liburiparser-dev libiconv-hook-dev
-		
+			
 	RUN \
  echo "**** compile tvheadend ****" && \
  mkdir -p \
@@ -291,16 +256,16 @@ RUN		apt-get install -y libvpx-dev libopus-dev libavresample-dev libva-dev libur
  make -j 16 && \
  make DESTDIR=/tmp/tvheadend-build install	
  
- #RUN \
- #echo "***** compile comskip ****" && \
- #git clone git://github.com/erikkaashoek/Comskip /tmp/comskip && \
- #cd /tmp/comskip && \
- #./autogen.sh && \
- #./configure \
-#	--bindir=/usr/bin \
-#	--sysconfdir=/config/comskip && \
- #make -j 16 && \
- #make DESTDIR=/tmp/comskip-build install
+RUN \
+	echo "***** compile comskip ****" && \
+	git clone https://github.com/erikkaashoek/Comskip /tmp/comskip && \
+	cd /tmp/comskip && \
+	./autogen.sh && \
+	./configure \
+	--bindir=/usr/bin \
+	--sysconfdir=/config/comskip && \
+	make -j 16 && \
+	make DESTDIR=/tmp/comskip-build install
  
 
 FROM        ubuntu:20.04 AS release
@@ -310,7 +275,7 @@ ENV         LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:/usr/lib:/usr/lib64:
 
 COPY --from=build /tmp/libdvbcsa-build/usr/ /usr/
 COPY --from=build /usr/local/ /usr/local/
-#COPY --from=build /tmp/comskip-build/usr/ /usr/
+COPY --from=build /tmp/comskip-build/usr/ /usr/
 COPY --from=build /tmp/tvheadend-build/usr/ /usr/
 COPY --from=build /usr/local/share/man/ /usr/local/share/man/
 
@@ -352,6 +317,7 @@ RUN  	apt-get update && \
 		libnppicc10 \
 		libnppidei10 \
 		libvdpau1 \
+		libva-drm2 \
 		xmltv && \		
 		apt-get autoremove -y && \
         apt-get clean -y
