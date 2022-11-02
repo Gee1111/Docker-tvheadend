@@ -63,8 +63,8 @@ ARG         PKG_CONFIG_PATH="/opt/ffmpeg/share/pkgconfig:/opt/ffmpeg/lib/pkgconf
 ARG         PREFIX=/opt/ffmpeg
 ARG         LD_LIBRARY_PATH="/opt/ffmpeg/lib:/opt/ffmpeg/lib64:/usr/lib64:/usr/lib"
 
-RUN			chmod 777 /var/cache/debconf/ 
-RUN			chmod 777 /var/cache/debconf/passwords.dat
+RUN		chmod 777 /var/cache/debconf/ 
+RUN		chmod 777 /var/cache/debconf/passwords.dat
 RUN 		echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && apt-get install -y -q
 
 
@@ -86,11 +86,11 @@ RUN      buildDeps="autoconf \
                     python \
                     libssl-dev \
                     yasm \
-					libargtable2-0 \
-					xmltv \
-					gettext \
-					libhdhomerun-dev \
-					libargtable2-dev \
+		libargtable2-0 \
+		xmltv \
+		gettext \
+		libhdhomerun-dev \
+		libargtable2-dev \
                     zlib1g-dev" && \
         apt-get -yqq update && \
         apt-get install -yq --no-install-recommends ${buildDeps}
@@ -186,21 +186,18 @@ RUN	apt install -y nvidia-cuda-toolkit
 ENV         FFMPEG_VERSION=4.4.3
 RUN  \
         DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
-		curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
+	curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
         tar -jx --strip-components=1 -f ffmpeg-${FFMPEG_VERSION}.tar.bz2
-		
-        ## curl -sLO https://github.com/Gee1111/ffmpeg/raw/main/ffmpeg-4.4.3.tar.bz2 && \			
-        ## tar -jx --strip-components=1 -f ffmpeg-4.4.3.tar.bz2
-
+	
 RUN \
         DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \	
         ./configure \	
-		--nvccflags="-gencode arch=compute_35,code=sm_35 -O2" \
+	--nvccflags="-gencode arch=compute_35,code=sm_35 -O2" \
         --disable-debug \
         --disable-doc \
         --disable-ffplay \
         --enable-shared \ 
-		--enable-avresample \
+	--enable-avresample \
         --enable-libopencore-amrnb \
         --enable-libopencore-amrwb \
         --enable-gpl \
@@ -234,7 +231,7 @@ RUN \
         --enable-nvenc \
         --enable-cuda \
         --enable-cuvid \
-		--enable-cuda-nvcc \
+	--enable-cuda-nvcc \
         --enable-libnpp \
         --extra-cflags="-I${PREFIX}/include -I${PREFIX}/include/ffnvcodec" && \  		
         make && \
