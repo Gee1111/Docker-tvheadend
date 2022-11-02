@@ -20,7 +20,7 @@ RUN     apt-get -yqq update && \
 
 FROM  devel-base as build
      
-ENV         FFMPEG_VERSION=4.4.1 \
+ENV         FFMPEG_VERSION=5.0 \
             AOM_VERSION=v3.2.0 \
             FDKAAC_VERSION=2.0.2 \
             FONTCONFIG_VERSION=2.13.94 \
@@ -44,7 +44,7 @@ ENV         FFMPEG_VERSION=4.4.1 \
             XAU_VERSION=1.7.3.1 \
             XORG_MACROS_VERSION=1.19.3 \
             XPROTO_VERSION=7.0.31 \     
-			NVIDIA_HEADERS_VERSION=11.1.5.0 \
+			NVIDIA_HEADERS_VERSION=11.1.5.1 \
             LIBBLURAY_VERSION=1.3.0 \
             SRC=/usr/local
 
@@ -89,12 +89,32 @@ RUN      buildDeps="autoconf \
 					libargtable2-0 \
 					xmltv \
 					gettext \
-					libdvbcsa-dev \
 					libhdhomerun-dev \
 					libargtable2-dev \
                     zlib1g-dev" && \
         apt-get -yqq update && \
         apt-get install -yq --no-install-recommends ${buildDeps}
+		
+RUN \	
+	git clone https://github.com/Gee1111/libdvbcsa /tmp/libdvbcsa && \
+	cd /tmp/libdvbcsa && \
+	# git config apply.whitespace nowarn && \
+	git apply -v libdvbcsa.patch && \
+	./bootstrap && \
+	./configure \
+    --prefix=/usr \
+    --sysconfdir=/etc \
+  --mandir=/usr/share/man \
+  --infodir=/usr/share/info \
+  --localstatedir=/var && \	
+	make && \
+ make check && \
+ make DESTDIR=/tmp/libdvbcsa-build install && \
+        echo "**** copy to /usr for tvheadend dependency ****" && \
+ cp -pr /tmp/libdvbcsa-build/usr/* /usr/
+
+
+ENV	NVIDIA_HEADERS_VERSION=11.1.5.2
 
 RUN \
 	DIR=/tmp/nv-codec-headers && \
@@ -106,222 +126,40 @@ RUN \
         rm -rf ${DIR}
 
 ## opencore-amr https://sourceforge.net/projects/opencore-amr/
-RUN \
-        DIR=/tmp/opencore-amr && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sL https://versaweb.dl.sourceforge.net/project/opencore-amr/opencore-amr/opencore-amr-${OPENCOREAMR_VERSION}.tar.gz | \
-        tar -zx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --enable-shared  && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+        
 # x264 http://www.videolan.org/developers/x264.html
-RUN \
-        DIR=/tmp/x264 && \
-        mkdir -p ${DIR} && \
-       cd ${DIR} && \
-        curl -sL https://download.videolan.org/pub/videolan/x264/snapshots/x264-snapshot-${X264_VERSION}.tar.bz2 | \
-        tar -jx --strip-components=1 && \
-      ./configure --prefix="${PREFIX}" --enable-shared --enable-pic --disable-cli && \
-        make && \
-       make install && \
-        rm -rf ${DIR}
+RUN 	apt install -y libopencore-amrnb-dev libopencore-amrwb-dev libogg-dev libopus-dev libvorbis-dev libtheora-dev libvpx-dev libwebp-dev libmp3lame-dev libxvidcore-dev libfdk-aac-dev libopenjp2-7-dev libfreetype-dev libvidstab-dev libfreetype6-dev libfribidi-dev python3 fontconfig libass-dev libprotozero-dev libxau-dev libxml2 libbluray-dev libaom-dev libxcb1-dev libpthread-stubs0-dev libx264-dev libx265-dev
 ### x265 http://x265.org/
-RUN \
-        DIR=/tmp/x265 && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        #curl -sL https://download.videolan.org/pub/videolan/x265/x265_${X265_VERSION}.tar.gz  | \
-		curl -sL https://github.com/videolan/x265/archive/3.4.tar.gz  | \
-        tar -zx && \
-        #cd x265_${X265_VERSION}/build/linux && \
-		cd x265-3.4/build/linux && \
-        sed -i "/-DEXTRA_LIB/ s/$/ -DCMAKE_INSTALL_PREFIX=\${PREFIX}/" multilib.sh && \
-        sed -i "/^cmake/ s/$/ -DENABLE_CLI=OFF/" multilib.sh && \
-        ./multilib.sh && \
-        make -C 8bit install && \
-        rm -rf ${DIR}
+
 ### libogg https://www.xiph.org/ogg/
-RUN \
-        DIR=/tmp/ogg && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://downloads.xiph.org/releases/ogg/libogg-1.3.5.tar.gz && \
-        tar -zx --strip-components=1 -f libogg-1.3.5.tar.gz && \
-        ./configure --prefix="${PREFIX}" --enable-shared  && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+
 ### libopus https://www.opus-codec.org/
-RUN \
-        DIR=/tmp/opus && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://archive.mozilla.org/pub/opus/opus-${OPUS_VERSION}.tar.gz && \
-        tar -zx --strip-components=1 -f opus-${OPUS_VERSION}.tar.gz && \
-        autoreconf -fiv && \
-        ./configure --prefix="${PREFIX}" --enable-shared && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+
 ### libvorbis https://xiph.org/vorbis/
-RUN \
-        DIR=/tmp/vorbis && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO http://downloads.xiph.org/releases/vorbis/libvorbis-${VORBIS_VERSION}.tar.gz && \
-        tar -zx --strip-components=1 -f libvorbis-${VORBIS_VERSION}.tar.gz && \
-        ./configure --prefix="${PREFIX}" --with-ogg="${PREFIX}" --enable-shared && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+
 ### libtheora http://www.theora.org/
-#RUN \
-   #     DIR=/tmp/theora && \
-      #  mkdir -p ${DIR} && \
-      #  cd ${DIR} && \
-      #  curl -sLO http://downloads.xiph.org/releases/theora/libtheora-1.1.1.tar.bz2 && \
-      #  tar -jx --strip-components=1 -f libtheora-1.1.1.tar.bz2 && \
-      #  ./configure --prefix="${PREFIX}" --with-ogg="${PREFIX}" --enable-shared && \
-      #  make && \
-       # make install && \
-       # rm -rf ${DIR}
+
 ### libvpx https://www.webmproject.org/code/
-RUN \
-        DIR=/tmp/vpx && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-       curl -sL https://codeload.github.com/webmproject/libvpx/tar.gz/v${VPX_VERSION} | \
-        tar -zx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --enable-vp8 --enable-vp9 --enable-vp9-highbitdepth --enable-pic --enable-shared \
-        --disable-debug --disable-examples --disable-docs --disable-install-bins  && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+
 ### libwebp https://developers.google.com/speed/webp/
-RUN \
-        DIR=/tmp/vebp && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sL https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-${WEBP_VERSION}.tar.gz | \
-        tar -zx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --enable-shared  && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+
 ### libmp3lame http://lame.sourceforge.net/
-RUN \
-        DIR=/tmp/lame && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sL https://versaweb.dl.sourceforge.net/project/lame/lame/$(echo ${LAME_VERSION} | sed -e 's/[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)/\1.\2/')/lame-${LAME_VERSION}.tar.gz | \
-        tar -zx --strip-components=1 && \
-        ./configure --prefix="${PREFIX}" --bindir="${PREFIX}/bin" --enable-shared --enable-nasm --disable-frontend && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+
 ### xvid https://www.xvid.com/
-#RUN \
-  #      DIR=/tmp/xvid && \
-    #    mkdir -p ${DIR} && \
-    #    cd ${DIR} && \
-    #    curl -sLO https://downloads.xvid.com/downloads/xvidcore-1.3.7.tar.gz && \
-     #  tar -zx -f xvidcore-1.3.7.tar.gz && \
-     #   cd xvidcore/build/generic && \
-     #   ./configure --prefix="${PREFIX}" --bindir="${PREFIX}/bin" && \
-     #   make && \
-      #  make install && \
-      #  rm -rf ${DIR}
+
 ### fdk-aac https://github.com/mstorsjo/fdk-aac
-RUN \
-        DIR=/tmp/fdk-aac && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sL https://github.com/mstorsjo/fdk-aac/archive/v${FDKAAC_VERSION}.tar.gz | \
-        tar -zx --strip-components=1 && \
-        autoreconf -fiv && \
-        ./configure --prefix="${PREFIX}" --enable-shared --datadir="${DIR}" && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+
 ## openjpeg https://github.com/uclouvain/openjpeg
-RUN \
-        DIR=/tmp/openjpeg && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sL https://github.com/uclouvain/openjpeg/archive/v${OPENJPEG_VERSION}.tar.gz | \
-        tar -zx --strip-components=1 && \
-        cmake -DBUILD_THIRDPARTY:BOOL=ON -DCMAKE_INSTALL_PREFIX="${PREFIX}" . && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+
 ## freetype https://www.freetype.org/
-RUN  \
-        DIR=/tmp/freetype && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://de.freedif.org/savannah/freetype/freetype-2.11.1.tar.gz && \        
-        tar -zx --strip-components=1 -f freetype-2.11.1.tar.gz && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
+
 ## libvstab https://github.com/georgmartius/vid.stab
-RUN  \
-        DIR=/tmp/vid.stab && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://github.com/georgmartius/vid.stab/archive/v${LIBVIDSTAB_VERSION}.tar.gz && \
-        echo ${LIBVIDSTAB_SHA256SUM} | sha256sum --check &&  \
-        tar -zx --strip-components=1 -f v${LIBVIDSTAB_VERSION}.tar.gz && \
-        cmake -DCMAKE_INSTALL_PREFIX="${PREFIX}" . && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
 		
 ## fridibi https://www.fribidi.org/
-##RUN  \
-     #   DIR=/tmp/fribidi && \
-     #   mkdir -p ${DIR} && \
-      #  cd ${DIR} && \
-      #  curl -sLO https://github.com/fribidi/fribidi/archive/refs/tags/v1.0.11.tar.gz && \
-      #  tar -zx --strip-components=1 -f v1.0.11.tar.gz && \
-      #  sed -i 's/^SUBDIRS =.*/SUBDIRS=gen.tab charset lib bin/' Makefile.am && \
-      #  ./bootstrap --no-config --auto && \
-      #  ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
-      #  make -j12 && \
-      #  make install && \
-      #  rm -rf ${DIR}
-	  
-	  RUN apt-get install libfribidi-dev python3 -y
 	  
 ## fontconfig https://www.freedesktop.org/wiki/Software/fontconfig/
-RUN  \
-        DIR=/tmp/fontconfig && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://www.freedesktop.org/software/fontconfig/release/fontconfig-${FONTCONFIG_VERSION}.tar.gz && \
-        tar -zx --strip-components=1 -f fontconfig-${FONTCONFIG_VERSION}.tar.gz && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
-## libass https://github.com/libass/libass
-#RUN  \
-      #  DIR=/tmp/libass && \
-     #   mkdir -p ${DIR} && \
-     #   cd ${DIR} && \
-      #  curl -sLO https://github.com/libass/libass/releases/download/0.15.2/libass-0.15.2.tar.gz && \
-      #  tar -zx --strip-components=1 -f libass-0.15.2.tar.gz && \
-      #  ./autogen.sh && \
-      #  ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
-      #  make && \
-      #  make install && \
-      #  rm -rf ${DIR}
-	  
-	  RUN     apt-get install libass-dev -y
-	  
+
+## libass https://github.com/libass/libass	  
 	  
 ## kvazaar https://github.com/ultravideo/kvazaar
 RUN \
@@ -336,131 +174,35 @@ RUN \
         make install && \
         rm -rf ${DIR}
 
-RUN \
-	DIR=/tmp/aom && \
-        git clone --branch ${AOM_VERSION} --depth 1 https://aomedia.googlesource.com/aom ${DIR} ; \
-        cd ${DIR} ; \
-        rm -rf CMakeCache.txt CMakeFiles ; \
-        mkdir -p ./aom_build ; \
-        cd ./aom_build ; \
-        cmake -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DBUILD_SHARED_LIBS=1 ..; \
-        make ; \
-        make install ; \
-        rm -rf ${DIR}
-
 ## libxcb (and supporting libraries) for screen capture https://xcb.freedesktop.org/
-RUN \
-        DIR=/tmp/xorg-macros && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://www.x.org/archive//individual/util/util-macros-${XORG_MACROS_VERSION}.tar.gz && \
-        tar -zx --strip-components=1 -f util-macros-${XORG_MACROS_VERSION}.tar.gz && \
-        ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
-
-RUN \
-        DIR=/tmp/xproto && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://www.x.org/archive/individual/proto/xorgproto-2021.5.tar.gz && \
-        tar -zx --strip-components=1 -f xorgproto-2021.5.tar.gz && \
-        ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
-
-RUN \
-        DIR=/tmp/libXau && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://www.x.org/archive/individual/lib/libXau-1.0.9.tar.gz && \
-        tar -zx --strip-components=1 -f libXau-1.0.9.tar.gz && \
-        ./configure --srcdir=${DIR} --prefix="${PREFIX}" && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
-
-RUN \
-        DIR=/tmp/libpthread-stubs && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://xcb.freedesktop.org/dist/libpthread-stubs-0.4.tar.gz && \
-        tar -zx --strip-components=1 -f libpthread-stubs-0.4.tar.gz && \
-        ./configure --prefix="${PREFIX}" && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
-
-RUN \
-        DIR=/tmp/libxcb-proto && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://xcb.freedesktop.org/dist/xcb-proto-${XCBPROTO_VERSION}.tar.gz && \
-        tar -zx --strip-components=1 -f xcb-proto-${XCBPROTO_VERSION}.tar.gz && \
-        ACLOCAL_PATH="${PREFIX}/share/aclocal" ./autogen.sh && \
-        ./configure --prefix="${PREFIX}" && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
-
-RUN \
-        DIR=/tmp/libxcb && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://xcb.freedesktop.org/dist/libxcb-${LIBXCB_VERSION}.tar.gz && \
-        tar -zx --strip-components=1 -f libxcb-${LIBXCB_VERSION}.tar.gz && \
-        ACLOCAL_PATH="${PREFIX}/share/aclocal" ./autogen.sh && \
-        ./configure --prefix="${PREFIX}" --disable-static --enable-shared && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
 
 ## libxml2 - for libbluray
-RUN \
-        DIR=/tmp/libxml2 && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO http://xmlsoft.org/download/libxml2-2.9.12.tar.gz && \
-        tar -xz --strip-components=1 -f libxml2-2.9.12.tar.gz && \
-        ./autogen.sh --prefix="${PREFIX}" --with-ftp=no --with-http=no --with-python=no && \
-        make && \
-        make install && \
-        rm -rf ${DIR}
-
 
 ## libbluray - Requires libxml, freetype, and fontconfig
-RUN \
-        DIR=/tmp/libbluray && \
-        mkdir -p ${DIR} && \
-        cd ${DIR} && \
-        curl -sLO https://download.videolan.org/pub/videolan/libbluray/${LIBBLURAY_VERSION}/libbluray-${LIBBLURAY_VERSION}.tar.bz2 && \
-        tar -jx --strip-components=1 -f libbluray-${LIBBLURAY_VERSION}.tar.bz2 && \
-        ./configure --prefix="${PREFIX}" --disable-examples --disable-bdjava-jar --disable-static --enable-shared && \
-        make && \
-        make install && \
-         rm -rf ${DIR}
+
+RUN	apt install -y nvidia-cuda-toolkit
 
 ## ffmpeg https://ffmpeg.org/
+ENV         FFMPEG_VERSION=4.4.3
 RUN  \
         DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
-        curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
+		curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
         tar -jx --strip-components=1 -f ffmpeg-${FFMPEG_VERSION}.tar.bz2
 		
-
-RUN		apt-get install -y	libmp3lame-dev libopencore-amrnb-dev libopencore-amrnb-dev libtheora-dev libxvidcore-dev
+        ## curl -sLO https://github.com/Gee1111/ffmpeg/raw/main/ffmpeg-4.4.3.tar.bz2 && \			
+        ## tar -jx --strip-components=1 -f ffmpeg-4.4.3.tar.bz2
 
 RUN \
-        DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
-        ./configure \
+        DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \	
+        ./configure \	
+		--nvccflags="-gencode arch=compute_35,code=sm_35 -O2" \
         --disable-debug \
         --disable-doc \
         --disable-ffplay \
-        --enable-shared \
-        --enable-avresample \
+        --enable-shared \ 
+		--enable-avresample \
         --enable-libopencore-amrnb \
-        #--enable-libopencore-amrwb \
+        --enable-libopencore-amrwb \
         --enable-gpl \
         --enable-libass \
         --enable-fontconfig \
@@ -492,8 +234,9 @@ RUN \
         --enable-nvenc \
         --enable-cuda \
         --enable-cuvid \
-        #--enable-libnpp \
-        --extra-cflags="-I${PREFIX}/include -I${PREFIX}/include/ffnvcodec" && \        
+		--enable-cuda-nvcc \
+        --enable-libnpp \
+        --extra-cflags="-I${PREFIX}/include -I${PREFIX}/include/ffnvcodec" && \  		
         make && \
         make install && \
         make distclean && \
@@ -509,7 +252,7 @@ RUN \
         cp -r ${PREFIX}/share/* /usr/local/share/ && \
         LD_LIBRARY_PATH=/usr/local/lib ffmpeg -buildconf
 		
-RUN		apt-get install -y	libvpx-dev libopus-dev
+RUN		apt-get install -y libvpx-dev libopus-dev libavresample-dev libva-dev liburiparser-dev libiconv-hook-dev
 		
 	RUN \
  echo "**** compile tvheadend ****" && \
@@ -517,7 +260,9 @@ RUN		apt-get install -y	libvpx-dev libopus-dev
 	/tmp/tvheadend && \
  git clone https://github.com/Gee1111/tvheadend.git /tmp/tvheadend && \
  cd /tmp/tvheadend && \
- git checkout 09a2c71abb01db8735437f233b8a54a0bb4939fc && \
+ ## git checkout 4deae00a11e92e6c19da4fd1bae48ef7f124c67b && \
+ git apply -v tvheadend43.patch && \
+  
  ./configure \
 	`#Encoding` \
 	--no-cache \
@@ -529,13 +274,13 @@ RUN		apt-get install -y	libvpx-dev libopus-dev
 	--disable-libvpx_static \
 	--disable-libx264_static \
 	--disable-libx265_static \
-	--disable-libfdkaac \
+	--disable-libfdkaac \	
 	--enable-libopus \
 	--enable-libvorbis \
 	--enable-libvpx \
 	--enable-libx264 \
 	--enable-libx265 \
-	\
+		\
 	`#Options` \
 	--disable-avahi \
 	--disable-dbus_1 \
@@ -558,16 +303,16 @@ RUN		apt-get install -y	libvpx-dev libopus-dev
  make -j 16 && \
  make DESTDIR=/tmp/tvheadend-build install	
  
- RUN \
- echo "***** compile comskip ****" && \
- git clone git://github.com/erikkaashoek/Comskip /tmp/comskip && \
- cd /tmp/comskip && \
- ./autogen.sh && \
- ./configure \
-	--bindir=/usr/bin \
-	--sysconfdir=/config/comskip && \
- make -j 16 && \
- make DESTDIR=/tmp/comskip-build install
+ #RUN \
+ #echo "***** compile comskip ****" && \
+ #git clone git://github.com/erikkaashoek/Comskip /tmp/comskip && \
+ #cd /tmp/comskip && \
+ #./autogen.sh && \
+ #./configure \
+#	--bindir=/usr/bin \
+#	--sysconfdir=/config/comskip && \
+ #make -j 16 && \
+ #make DESTDIR=/tmp/comskip-build install
  
 
 FROM        ubuntu:20.04 AS release
@@ -575,8 +320,9 @@ MAINTAINER  Gee
 
 ENV         LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:/usr/lib:/usr/lib64:/lib:/lib64
 
+COPY --from=build /tmp/libdvbcsa-build/usr/ /usr/
 COPY --from=build /usr/local/ /usr/local/
-COPY --from=build /tmp/comskip-build/usr/ /usr/
+#COPY --from=build /tmp/comskip-build/usr/ /usr/
 COPY --from=build /tmp/tvheadend-build/usr/ /usr/
 COPY --from=build /usr/local/share/man/ /usr/local/share/man/
 
@@ -591,25 +337,38 @@ RUN apt-get update && \
 RUN  	apt-get update && \
 		apt-get install -y --no-install-recommends libargtable2-dev \
 		libhdhomerun-dev \
-		gettext \
-		libdvbcsa-dev \
+		gettext \	
 		nano \
 		libass9 \
 		libtheora-dev \
 		libxvidcore4 \
-		bzip2 \
+		liburiparser1 \
+		libva2 \
+		libvidstab1.1 \
+		libbluray2 \
+		libvpx6 \
+		libwebpmux3 \
+		libopencore-amrwb0 \
+		libopencore-amrnb0 \
+		libaom0 \
+		libfdk-aac1 \
+		libmp3lame0 \
+		libopenjp2-7 \
+		libopus0 \
+		libvorbis0a \
+		libvorbisenc2 \
+		libx264-155 \
+		libx265-179 \
+		bzip2 \		
+		libnppig10 \
+		libnppicc10 \
+		libnppidei10 \
+		libvdpau1 \
 		xmltv && \		
 		apt-get autoremove -y && \
         apt-get clean -y
 		
 ENV HOME="/config"
-
-# RUN useradd -ms /bin/bash hts
-
-# RUN	mkdir -p /config /records && \
-#	chown -R hts:bin /config /records
-
-# USER hts
 
 EXPOSE 9981 9982
 VOLUME /config /records
